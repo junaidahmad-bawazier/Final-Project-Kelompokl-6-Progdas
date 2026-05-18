@@ -45,6 +45,26 @@ typedef struct {
 
 }Wilayah;
 
+int hitungKapasitas(int Populasi, int choice) {
+    switch(choice) {
+        case kulRingan:
+            return Populasi / kulinerRingan;
+        case kulBerat:
+            return Populasi / kulinerBerat;
+        case sembako:
+            return Populasi / tokoSembako;
+        case service:
+            return Populasi / Jasa;
+        case pakaian:
+            return Populasi / tokoPakaian;
+        case elektronik:
+            return Populasi / tokoElektronik;
+        default:
+            return 0;
+    }
+}
+
+
 int main() {
 
     Wilayah wilayah;
@@ -53,7 +73,7 @@ int main() {
     printf("=== Sistem Zonasi dan Rekomendasi Diversifikasi UMKM Retail ===");
 
     printf("Masukkan nama wilayah : ");
-    scanf("%d", wilayah.nama);
+    scanf("%s", wilayah.nama);
 
     printf("Anda mau buka usaha apa : ");
     scanf("%s", wilayah.namaUsaha);
@@ -66,7 +86,42 @@ int main() {
     printf("\n5. Toko Pakaian");
     printf("\n6. Toko Elektronik\n\n");
 
-    scanf("%d", choice);
+    scanf("%d", &choice);
+     switch(choice) {
+        case kulRingan:
+            printf("Populasi RT wilayah %s dan dua RT terdekat: ", wilayah.nama);
+            scanf("%d", &wilayah.populasi.tiga_RT);
+            break;
+        case kulBerat:
+            printf("Populasi RW wilayah %s: ", wilayah.nama);
+            scanf("%d", &wilayah.populasi.RW);
+            break;
+        case sembako:
+            printf("Populasi RW wilayah %s: ", wilayah.nama);
+            scanf("%d", &wilayah.populasi.RW);
+            break;
+        case service:
+            printf("Populasi RW wilayah %s dan satu RW terdekat: ", wilayah.nama);
+            scanf("%d", &wilayah.populasi.dua_RW);
+            break;
+        case pakaian:
+            printf("Populasi Kelurahan wilayah %s: ", wilayah.nama);
+            scanf("%d", &wilayah.populasi.Kelurahan);
+            break;
+            
+        case elektronik:
+            printf("Populasi Kelurahan wilayah %s: ", wilayah.nama);
+            scanf("%d", &wilayah.populasi.Kelurahan);
+            break;
+        default:
+            printf("Pilihan tidak valid\n");
+            break;
+    }
 
+
+    
     return 0;
 }
+
+
+
