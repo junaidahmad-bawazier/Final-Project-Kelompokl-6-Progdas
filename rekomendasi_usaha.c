@@ -19,8 +19,9 @@ typedef union {
     int jasa;
     int toko_pakaian;
     int toko_elektronik;
-
+    int usahaall;
 }kategoriUsaha;
+
 
 typedef enum {
     kulRingan = 1, kulBerat, sembako, service, pakaian, elektronik
@@ -42,6 +43,7 @@ typedef struct {
     char namaUsaha[max];
     kategoriUsaha banyakUsaha;
     Populasi populasi;
+    kategoriUsaha kapasitasMaksimal;
 
 }Wilayah;
 
@@ -87,38 +89,65 @@ int main() {
     printf("\n6. Toko Elektronik\n\n");
 
     scanf("%d", &choice);
-     switch(choice) {
+    switch(choice) {
         case kulRingan:
             printf("Populasi RT wilayah %s dan dua RT terdekat: ", wilayah.nama);
             scanf("%d", &wilayah.populasi.tiga_RT);
+            wilayah.kapasitasMaksimal.kuliner_ringan = hitungKapasitas(wilayah.populasi.tiga_RT, choice);
+            printf("\nBerapa banyak usaha %s yang ada di %s?", wilayah.namaUsaha, wilayah.nama);
+            scanf("%d", &wilayah.banyakUsaha.kuliner_ringan);
             break;
+
         case kulBerat:
             printf("Populasi RW wilayah %s: ", wilayah.nama);
             scanf("%d", &wilayah.populasi.RW);
+            wilayah.kapasitasMaksimal.kuliner_berat = hitungKapasitas(wilayah.populasi.RW, choice);
+            printf("\nBerapa banyak usaha %s yang ada di %s?", wilayah.namaUsaha, wilayah.nama);
+            scanf("%d", &wilayah.banyakUsaha.kuliner_berat);
             break;
+
         case sembako:
             printf("Populasi RW wilayah %s: ", wilayah.nama);
             scanf("%d", &wilayah.populasi.RW);
+            wilayah.kapasitasMaksimal.toko_sembako = hitungKapasitas(wilayah.populasi.RW, choice);
+            printf("\nBerapa banyak usaha %s yang ada di %s?", wilayah.namaUsaha, wilayah.nama);
+            scanf("%d", &wilayah.banyakUsaha.toko_sembako);
             break;
+
         case service:
             printf("Populasi RW wilayah %s dan satu RW terdekat: ", wilayah.nama);
             scanf("%d", &wilayah.populasi.dua_RW);
+            wilayah.kapasitasMaksimal.jasa = hitungKapasitas(wilayah.populasi.dua_RW, choice);
+            printf("\nBerapa banyak usaha %s yang ada di %s?", wilayah.namaUsaha, wilayah.nama);
+            scanf("%d", &wilayah.banyakUsaha.jasa);
             break;
+
         case pakaian:
             printf("Populasi Kelurahan wilayah %s: ", wilayah.nama);
             scanf("%d", &wilayah.populasi.Kelurahan);
+            wilayah.kapasitasMaksimal.toko_pakaian = hitungKapasitas(wilayah.populasi.Kelurahan, choice);
+            printf("\nBerapa banyak usaha %s yang ada di %s?", wilayah.namaUsaha, wilayah.nama);
+            scanf("%d", &wilayah.banyakUsaha.toko_pakaian);
             break;
             
         case elektronik:
             printf("Populasi Kelurahan wilayah %s: ", wilayah.nama);
             scanf("%d", &wilayah.populasi.Kelurahan);
+            wilayah.kapasitasMaksimal.toko_elektronik = hitungKapasitas(wilayah.populasi.Kelurahan, choice);
+            printf("\nBerapa banyak usaha %s yang ada di %s?", wilayah.namaUsaha, wilayah.nama);
+            scanf("%d", &wilayah.banyakUsaha.toko_elektronik);
             break;
+            
         default:
             printf("Pilihan tidak valid\n");
             break;
     }
 
-
+    if (wilayah.banyakUsaha.usahaall < wilayah.kapasitasMaksimal.usahaall) {
+        printf("\nUsaha %s di wilayah %s masih memiliki potensi untuk berkembang.\n", wilayah.namaUsaha, wilayah.nama);
+    } else {
+        printf("\nUsaha %s di wilayah %s sudah mencapai kapasitas maksimal.\n", wilayah.namaUsaha, wilayah.nama);
+    }
     
     return 0;
 }
