@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h> // untuk malloc, realloc, dan free
 
 // daftar threshold
 #define kulinerRingan 500
@@ -11,21 +12,21 @@
 
 // maksimal karakter nama wilayah
 #define max 100
-// maksimal riwayat untuk tabel
-#define maxRiwayat 50
 
 // kategori usaha nya
-typedef union {
+typedef union
+{
+    int usahaSejenis;
     int kuliner_ringan;
     int kuliner_berat;
     int toko_sembako;
     int jasa;
     int toko_pakaian;
     int toko_elektronik;
-    int usahaall;
 } kategoriUsaha;
 
-typedef enum {
+typedef enum
+{
     kulRingan = 1,
     kulBerat,
     sembako,
@@ -35,138 +36,255 @@ typedef enum {
 } Pilihan;
 
 // pembagian populasi wilayahnya
-typedef struct {
-    int tiga_RT; 
+typedef struct
+{
+    int tiga_RT; // 1 RT + 2 RT terdekat
     int RW;
-    int dua_RW; 
+    int dua_RW; // 1 RW + 1 RW terdekat
     int Kelurahan;
+
 } Populasi;
 
 // setiap mau buka suatu "usaha" dalam suatu "wilayah" akan ada
-typedef struct {
+typedef struct
+{
     char nama[max];
     char namaUsaha[max];
     kategoriUsaha banyakUsaha;
     Populasi populasi;
     kategoriUsaha kapasitasMaksimal;
-    int sisa_kuota;      // Tambahan baru
-    char status[20];     // Tambahan baru
+    int sisa_kuota;      // untuk tabel bagian sisa kuotas
+    char status[20];     // untuk tabel bagian status
 } Wilayah;
 
-int hitungKapasitas(int Populasi, int choice) {
-    switch (choice) {
-        case kulRingan: return Populasi / kulinerRingan;
-        case kulBerat: return Populasi / kulinerBerat;
-        case sembako: return Populasi / tokoSembako;
-        case service: return Populasi / Jasa;
-        case pakaian: return Populasi / tokoPakaian;
-        case elektronik: return Populasi / tokoElektronik;
-        default: return 0;
+int hitungKapasitas(int Populasi, int choice)
+{
+    switch (choice)
+    {
+    case kulRingan:
+        return Populasi / kulinerRingan;
+    case kulBerat:
+        return Populasi / kulinerBerat;
+    case sembako:
+        return Populasi / tokoSembako;
+    case service:
+        return Populasi / Jasa;
+    case pakaian:
+        return Populasi / tokoPakaian;
+    case elektronik:
+        return Populasi / tokoElektronik;
+    default:
+        return 0;
     }
 }
 
-// Fungsi tabel menggunakan pointer format (*ptr).member
-void tampilkanTabel(Wilayah *daftar, int total) {
+// Fungsi tabel menggunakan akses array biasa (tanpa pointer yang rumit)
+void tampilkanTabel(Wilayah daftarUsaha[], int jumlahUsaha)   // jumlahUsaha buat nentuin banyak usahanya
+{
+    // Bubble Sort 
+    for (int i = 0; i < jumlahUsaha - 1; i++) {
+        for (int j = 0; j < jumlahUsaha - i - 1; j++) {
+            if (daftarUsaha[j].sisa_kuota < daftarUsaha[j + 1].sisa_kuota) {
+                Wilayah temp = daftarUsaha[j];
+                daftarUsaha[j] = daftarUsaha[j + 1];
+                daftarUsaha[j + 1] = temp;
+            }
+        }
+    }
+
     printf("\n--- Tabel Kesimpulan Hasil Usaha ---\n");
-    printf("--------------------------------------------------------------------------\n");
-    printf("| %-15s | %-15s | %-5s | %-5s | %-10s |\n", "Nama Usaha", "Wilayah", "Banyak", "Max", "Status");
-    printf("--------------------------------------------------------------------------\n");
-    for (int i = 0; i < total; i++) {
-        printf("| %-15s | %-15s | %-5d | %-5d | %-10s |\n", 
-               (*(daftar + i)).namaUsaha,
-               (*(daftar + i)).nama,
-               (*(daftar + i)).banyakUsaha.usahaall,
-               (*(daftar + i)).kapasitasMaksimal.usahaall,
-               (*(daftar + i)).status);
+    printf("------------------------------------------------------------------------------------\n");
+    printf("| %-15s | %-15s | %-6s | %-6s | %-6s | %-10s |\n", "Nama Usaha", "Wilayah", "Banyak", "Max", "Sisa", "Status");
+    printf("------------------------------------------------------------------------------------\n");
+    for (int i = 0; i < jumlahUsaha; i++) {
+        printf("| %-15s | %-15s | %-6d | %-6d | %-6d | %-10s |\n", 
+               daftarUsaha[i].namaUsaha,
+               daftarUsaha[i].nama,
+               daftarUsaha[i].banyakUsaha.usahaSejenis,
+               daftarUsaha[i].kapasitasMaksimal.usahaSejenis,
+               daftarUsaha[i].sisa_kuota,
+               daftarUsaha[i].status);
     }
-    printf("--------------------------------------------------------------------------\n");
+    printf("------------------------------------------------------------------------------------\n");
 }
 
-int main() {
-    Wilayah riwayat[maxRiwayat];
-    int jumlahData = 0;
+int main()
+{
+    // Alokasi memori dinamis HANYA untuk rwayat tabel
+    int kapasitas_daftarUsaha = 2; 
+    Wilayah *daftarUsaha = (Wilayah *)malloc(kapasitas_daftarUsaha * sizeof(Wilayah));
+    if (daftarUsaha == NULL) {
+        printf("Gagal mengalokasikan memori!\n");
+        return 1; 
+    }
+    
+    int jumlahUsaha = 0; //counter buat ngitung jumlah usahanya
+    Wilayah wilayah; 
     int choice;
     int tindakanSelanjutnya;
-    char tempNamaWilayah[max];
 
     printf("=== Sistem Zonasi dan Rekomendasi Diversifikasi UMKM Retail ===\n\n");
 
-    do {
-        printf("Masukkan nama wilayah : ");
-        scanf(" %[^\n]", tempNamaWilayah);
+    do
+    {
+        printf("\nMasukkan nama wilayah : ");
+        scanf(" %[^\n]", wilayah.nama);
 
-        do {
-            // Menggunakan pointer ke elemen array riwayat saat ini
-            Wilayah *w = &riwayat[jumlahData];
-            strcpy((*w).nama, tempNamaWilayah);
-
+        do
+        {
             printf("Anda mau buka usaha apa : ");
-            scanf(" %[^\n]", (*w).namaUsaha);
+            scanf(" %[^\n]", wilayah.namaUsaha);
 
-            printf("\n1. Kuliner Ringan\n2. Kuliner Berat\n3. Toko Sembako\n4. Jasa\n5. Toko Pakaian\n6. Toko Elektronik\n\n");
+            printf("\n1. Kuliner Ringan");
+            printf("\n2. Kuliner Berat");
+            printf("\n3. Toko Sembako");
+            printf("\n4. Jasa");
+            printf("\n5. Toko Pakaian");
+            printf("\n6. Toko Elektronik\n\n");
             printf("Termasuk kategori apa usaha anda: ");
             scanf("%d", &choice);
 
-            int pop_pilihan = 0;
-            switch (choice) {
-                case kulRingan:
-                    printf("Populasi RT wilayah %s dan dua RT terdekat: ", (*w).nama);
-                    scanf("%d", &(*w).populasi.tiga_RT);
-                    pop_pilihan = (*w).populasi.tiga_RT;
-                    break;
-                case kulBerat:
-                case sembako:
-                    printf("Populasi RW wilayah %s: ", (*w).nama);
-                    scanf("%d", &(*w).populasi.RW);
-                    pop_pilihan = (*w).populasi.RW;
-                    break;
-                case service:
-                    printf("Populasi RW wilayah %s dan satu RW terdekat: ", (*w).nama);
-                    scanf("%d", &(*w).populasi.dua_RW);
-                    pop_pilihan = (*w).populasi.dua_RW;
-                    break;
-                case pakaian:
-                case elektronik:
-                    printf("Populasi Kelurahan wilayah %s: ", (*w).nama);
-                    scanf("%d", &(*w).populasi.Kelurahan);
-                    pop_pilihan = (*w).populasi.Kelurahan;
-                    break;
+            switch (choice)
+            {
+            case kulRingan:
+                printf("\nMasukkan total populasi RT lokasi usaha Anda serta 2 RT terdekat dari lokasi usaha Anda: ");
+                scanf("%d", &wilayah.populasi.tiga_RT);
+                wilayah.kapasitasMaksimal.kuliner_ringan = hitungKapasitas(wilayah.populasi.tiga_RT, choice);
+                printf("\nBerapa banyak usaha %s yang ada di %s? ", wilayah.namaUsaha, wilayah.nama);
+                scanf("%d", &wilayah.banyakUsaha.kuliner_ringan);
+                break;
+
+            case kulBerat:
+                printf("\nMasukkan total populasi di RW tempat usaha Anda: ");
+                scanf("%d", &wilayah.populasi.RW);
+                wilayah.kapasitasMaksimal.kuliner_berat = hitungKapasitas(wilayah.populasi.RW, choice);
+                printf("\nBerapa banyak usaha %s yang ada di %s? ", wilayah.namaUsaha, wilayah.nama);
+                scanf("%d", &wilayah.banyakUsaha.kuliner_berat);
+                break;
+
+            case sembako:
+                printf("\nMasukkan total populasi di RW tempat usaha Anda: ");
+                scanf("%d", &wilayah.populasi.RW);
+                wilayah.kapasitasMaksimal.toko_sembako = hitungKapasitas(wilayah.populasi.RW, choice);
+                printf("\nBerapa banyak usaha %s yang ada di %s? ", wilayah.namaUsaha, wilayah.nama);
+                scanf("%d", &wilayah.banyakUsaha.toko_sembako);
+                break;
+
+            case service:
+                printf("\nMasukkan total populasi gabungan di RW tempat usaha Anda dan RW terdekat dari usaha Anda: ");
+                scanf("%d", &wilayah.populasi.dua_RW);
+                wilayah.kapasitasMaksimal.jasa = hitungKapasitas(wilayah.populasi.dua_RW, choice);
+                printf("\nBerapa banyak usaha %s yang ada di %s? ", wilayah.namaUsaha, wilayah.nama);
+                scanf("%d", &wilayah.banyakUsaha.jasa);
+                break;
+
+            case pakaian:
+                printf("\nMasukkan total populasi di kelurahan tempat anda buka usaha: ");
+                scanf("%d", &wilayah.populasi.Kelurahan);
+                wilayah.kapasitasMaksimal.toko_pakaian = hitungKapasitas(wilayah.populasi.Kelurahan, choice);
+                printf("\nBerapa banyak usaha %s yang ada di %s? ", wilayah.namaUsaha, wilayah.nama);
+                scanf("%d", &wilayah.banyakUsaha.toko_pakaian);
+                break;
+
+            case elektronik:
+                printf("\nMasukkan total populasi di kelurahan tempat anda buka usaha: ");
+                scanf("%d", &wilayah.populasi.Kelurahan);
+                wilayah.kapasitasMaksimal.toko_elektronik = hitungKapasitas(wilayah.populasi.Kelurahan, choice);
+                printf("\nBerapa banyak usaha %s yang ada di %s? ", wilayah.namaUsaha, wilayah.nama);
+                scanf("%d", &wilayah.banyakUsaha.toko_elektronik);
+                break;
+
+            default:
+                printf("Pilihan tidak valid\n");
+                break;
             }
 
-            (*w).kapasitasMaksimal.usahaall = hitungKapasitas(pop_pilihan, choice);
-            printf("\nBerapa banyak usaha %s yang ada di %s? ", (*w).namaUsaha, (*w).nama);
-            scanf("%d", &(*w).banyakUsaha.usahaall);
-
-            // Logika Sisa Kuota
-            (*w).sisa_kuota = (*w).kapasitasMaksimal.usahaall - (*w).banyakUsaha.usahaall;
-            if ((*w).sisa_kuota < 0) (*w).sisa_kuota = 0;
-
-            if ((*w).banyakUsaha.usahaall < (*w).kapasitasMaksimal.usahaall) {
-                strcpy((*w).status, "potensi");
-                printf("\nUsaha %s di wilayah %s masih memiliki potensi untuk berkembang.\n", (*w).namaUsaha, (*w).nama);
+            // Menghitung sisa kuota dan status untuk dimasukkan ke array daftarUsaha
+            wilayah.sisa_kuota = wilayah.kapasitasMaksimal.usahaSejenis - wilayah.banyakUsaha.usahaSejenis;
+            if (wilayah.sisa_kuota < 0) wilayah.sisa_kuota = 0;
+            
+            if (wilayah.banyakUsaha.usahaSejenis < wilayah.kapasitasMaksimal.usahaSejenis) {
+                strcpy(wilayah.status, "potensi");
             } else {
-                strcpy((*w).status, "maksimal");
-                printf("\nUsaha %s di wilayah %s sudah mencapai kapasitas maksimal.\n", (*w).namaUsaha, (*w).nama);
+                strcpy(wilayah.status, "maksimal");
             }
 
-            jumlahData++; // Simpan data ke riwayat
-
-            do {
-                printf("\nPilih tindakan Anda selanjutnya :\n");
-                printf("1. Cek wilayah lain\n");
-                printf("2. Pindah Usaha (wilayah sama)\n");
-                printf("3. Lihat tabel potensi usaha\n");
-                printf("4. Keluar Program\n");
-                printf("Pilihan: ");
-                scanf("%d", &tindakanSelanjutnya);
-
-                if (tindakanSelanjutnya == 3) {
-                    tampilkanTabel(riwayat, jumlahData);
+            // Memasukkan data wilayah saat ini ke alokasi memori array dinamis
+            if (jumlahUsaha >= kapasitas_daftarUsaha) {
+                kapasitas_daftarUsaha *= 2; 
+                Wilayah *temp = (Wilayah *)realloc(daftarUsaha, kapasitas_daftarUsaha * sizeof(Wilayah));
+                if (temp == NULL) {
+                    printf("Gagal menambah alokasi memori!\n");
+                    free(daftarUsaha); 
+                    return 1;
                 }
-            } while (tindakanSelanjutnya == 3);
+                daftarUsaha = temp; 
+            }
+            daftarUsaha[jumlahUsaha] = wilayah; // Simpan ke array
+            jumlahUsaha++; 
 
+            
+            if (wilayah.banyakUsaha.usahaSejenis < wilayah.kapasitasMaksimal.usahaSejenis)
+            {
+                char konfirmasi;
+                printf("\nUsaha %s di wilayah %s masih memiliki potensi untuk berkembang.\n", wilayah.namaUsaha, wilayah.nama);
+                printf("\nApakah anda yakin mau buka usaha tersebut (y/n)? ");
+                scanf(" %c", &konfirmasi);
+                
+                if (konfirmasi == 'y')
+                {
+                    printf("\n\n=== Silahkan Anda buka usaha %s ===\n", wilayah.namaUsaha);
+                    tindakanSelanjutnya = 0;
+                }
+                else
+                {
+                    do {
+                        printf("\n1. Cek wilayah lain\n");
+                        printf("2. Pindah Usaha\n");
+                        printf("3. Lihat Tabel Potensi Usaha dan Saran\n");
+                        printf("4. Keluar Program\n");
+                        printf("\nPilih tindakan Anda selanjutnya : ");
+                        scanf("%d", &tindakanSelanjutnya);
+                        
+                        if (tindakanSelanjutnya == 3) {
+                            tampilkanTabel(daftarUsaha, jumlahUsaha);
+                            if (jumlahUsaha > 0 && daftarUsaha[0].sisa_kuota > 0) {
+                                printf("Usaha dengan potensi paling tinggi saat ini adalah %s di %s dengan sisa kuota %d.\n", 
+                                       daftarUsaha[0].namaUsaha, daftarUsaha[0].nama, daftarUsaha[0].sisa_kuota);
+                            }
+                        }
+                    } while (tindakanSelanjutnya == 3);
+                }
+            }
+            else
+            {
+                printf("\nUsaha %s di wilayah %s sudah mencapai kapasitas maksimal.\n", wilayah.namaUsaha, wilayah.nama);
+                do {
+                    printf("\nPilih tindakan Anda selanjutnya :\n");
+                    printf("1. Cek wilayah lain\n");
+                    printf("2. Pindah Usaha\n");
+                    printf("3. Lihat tabel potensi usaha dan saran\n");
+                    printf("4. Keluar Program\n");
+                    printf("\nPilihan: ");
+                    scanf("%d", &tindakanSelanjutnya);
+                    
+                    if (tindakanSelanjutnya == 3) {
+                        tampilkanTabel(daftarUsaha, jumlahUsaha);
+                        if (jumlahUsaha > 0 && daftarUsaha[0].sisa_kuota > 0) {
+                            printf("\nUsaha dengan potensi paling tinggi saat ini adalah %s di %s dengan sisa kuota %d.\n", 
+                                   daftarUsaha[0].namaUsaha, daftarUsaha[0].nama, daftarUsaha[0].sisa_kuota);
+                        } else {
+                            printf("\nSeluruh usaha yang dianalisis sudah mencapai batas maksimal. Cari wilayah atau usaha lain!\n");
+                        }
+                    }
+                } while (tindakanSelanjutnya == 3);
+            }
+            
         } while (tindakanSelanjutnya == 2);
     } while (tindakanSelanjutnya == 1);
+
+    // free daftarUsaha karena realloc
+    free(daftarUsaha);
 
     return 0;
 }
